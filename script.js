@@ -8,116 +8,123 @@ const imagesPreview = document.getElementById('imagesPreview');
 const outputCanvas = document.getElementById('outputCanvas');
 const downloadLink = document.getElementById('downloadLink');
 
-// ====== المفتاح كيتحفظ غير فالمتصفح ديالك ======
+// المفتاح اختياري: إلا كسبتي pollen من Quests وحطيتيه، السرعة كتولي فورية
 let POLLI_TOKEN = localStorage.getItem('polli_token') || '';
-const WAIT_NO_TOKEN = 46; // انتظار طويل إلا ما كانش مفتاح
-// ================================================
+const FREE_WAIT = 46;   // ثواني الانتظار بلا مفتاح
+const TOKEN_WAIT = 3;   // ثواني الانتظار بالمفتاح
 
 const ctx = outputCanvas.getContext('2d');
 let generatedImages = [];
 let mediaRecorder;
 let recordedChunks = [];
+let stopRequested = false;
 
-// زر ديناميكي "🔑 المفتاح" بلا ما نبدلو HTML
+// زر صغير لإدخال المفتاح (اختياري)
 const keyBtn = document.createElement('button');
-keyBtn.textContent = POLLI_TOKEN ? '🔑 المفتاح: ✅ (بدّلو)' : '🔑 أدخل مفتاح Pollinations';
 keyBtn.style.cssText = 'margin-top:8px;padding:8px 14px;border:none;border-radius:6px;background:#ffd166;color:#000;font-weight:bold;cursor:pointer;';
+function refreshKeyBtn(){ keyBtn.textContent = POLLI_TOKEN ? '🔑 مفتاح: ✅ (بدّلو/مسحو)' : '🔑 عندي مفتاح (تسريع)'; }
+refreshKeyBtn();
 keyBtn.onclick = () => {
-    const k = window.prompt('🔑 لصق مفتاح Pollinations (من enter.pollinations.ai):\n(كيتحفظ غير فمتصفحك)', POLLI_TOKEN);
+    const k = window.prompt('🔑 لصق مفتاح Pollinations (اختياري). سيبو خاوي باش تمسحو:', POLLI_TOKEN);
     if (k === null) return;
     POLLI_TOKEN = k.trim();
-    if (POLLI_TOKEN) localStorage.setItem('polli_token', POLLI_TOKEN);
-    else localStorage.removeItem('polli_token');
-    keyBtn.textContent = POLLI_TOKEN ? '🔑 المفتاح: ✅ (بدّلو)' : '🔑 أدخل مفتاح Pollinations';
-    status.textContent = POLLI_TOKEN ? '✅ المفتاح تحفظ. دابا الصور غادي يجيو سريعين!' : '⚠️ تمسح المفتاح. غادي نخدمو بالانتظار الطويل.';
+    if (POLLI_TOKEN) localStorage.setItem('polli_token', POLLI_TOKEN); else localStorage.removeItem('polli_token');
+    refreshKeyBtn();
+    status.textContent = POLLI_TOKEN ? '✅ المفتاح تحفظ، السرعة كتولّي فورية.' : '🗑️ تمسح المفتاح، غادي نخدمو بالانتظار المجاني.';
 };
 document.querySelector('.buttons').after(keyBtn);
 
-function waitWithCountdown(seconds, msg) {
+function wait(sec, msg) {
     return new Promise((resolve) => {
-        let left = seconds;
-        status.textContent = `${msg} (${left})`;
-        const timer = setInterval(() => {
-            left--;
+        let left = sec;
+        const tick = () => {
             status.textContent = `${msg} (${left})`;
-            if (left <= 0) { clearInterval(timer); resolve(); }
-        }, 1000);
+            if (left <= 0 || stopRequested) { resolve(); return; }
+            left--;
+            setTimeout(tick, 1000);
+        };
+        tick();
     });
 }
 
-function loadImage(url) {
+// تحميل صورة مع مهلة زمنية (باش ما يتعلّقش العداد)
+function loadImageTO(url, ms = 75000) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = reject;
+        const t = setTimeout(() => { img.src = ''; reject(new Error('timeout')); }, ms);
+        img.onload = () => { clearTimeout(t); resolve(img); };
+        img.onerror = () => { clearTimeout(t); reject(new Error('load-fail')); };
         img.src = url;
     });
 }
 
-// كشف الصور المزيفة (صفراء/وردية = limit reached)
+// كشف الصور المزيفة (الصفرا/الوردية ديال "limit reached")
 function isPlaceholder(img) {
-    const c = document.createElement('canvas');
-    c.width = 16; c.height = 16;
-    const x = c.getContext('2d');
-    x.drawImage(img, 0, 0, 16, 16);
-    const d = x.getImageData(0, 0, 16, 16).data;
-    let r = 0, g = 0, b = 0;
-    for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
-    r /= 256; g /= 256; b /= 256;
-    let v = 0;
-    for (let i = 0; i < d.length; i += 4) v += (d[i]-r)**2 + (d[i+1]-g)**2 + (d[i+2]-b)**2;
-    v /= 256;
-    const yellow = r > 200 && g > 170 && b < 160;
-    const pink = r > 220 && g > 190 && b > 180 && b < 225;
-    return v < 1800 && (yellow || pink);
+    try {
+        const c = document.createElement('canvas');
+        c.width = 16; c.height = 16;
+        const x = c.getContext('2d');
+        x.drawImage(img, 0, 0, 16, 16);
+        const d = x.getImageData(0, 0, 16, 16).data;
+        let r=0,g=0,b=0;
+        for (let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
+        r/=256; g/=256; b/=256;
+        let v=0;
+        for (let i=0;i<d.length;i+=4) v += (d[i]-r)**2+(d[i+1]-g)**2+(d[i+2]-b)**2;
+        v/=256;
+        const yellow = r>200 && g>170 && b<160;
+        const pink   = r>220 && g>190 && b>180 && b<225;
+        return v < 1800 && (yellow || pink);
+    } catch(e){ return false; }
 }
 
 function drawCover(image, w, h) {
-    const ir = image.width / image.height, cr = w / h;
-    let sx=0, sy=0, sw=image.width, sh=image.height;
-    if (ir > cr) { sw = image.height*cr; sx = (image.width-sw)/2; }
-    else { sh = image.width/cr; sy = (image.height-sh)/2; }
+    const ir = image.width/image.height, cr = w/h;
+    let sx=0,sy=0,sw=image.width,sh=image.height;
+    if (ir>cr){ sw=image.height*cr; sx=(image.width-sw)/2; }
+    else { sh=image.width/cr; sy=(image.height-sh)/2; }
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, w, h);
 }
 
-// 1. توليد الصور
+// 1. توليد الصور (منطقي ومحكّم)
 generateBtn.addEventListener('click', async () => {
     const basePrompt = promptInput.value.trim();
     const numImages = parseInt(numImagesInput.value);
     if (!basePrompt) { alert('الرجاء إدخال وصف للفيديو'); return; }
 
+    stopRequested = false;
     generateBtn.disabled = true;
     createVideoBtn.disabled = true;
+    downloadLink.style.display = 'none';
     imagesPreview.innerHTML = '';
     generatedImages = [];
-    let blocked = false;
+
+    const waitTime = POLLI_TOKEN ? TOKEN_WAIT : FREE_WAIT;
 
     for (let i = 0; i < numImages; i++) {
-        if (blocked) break;
-        if (i > 0 && !POLLI_TOKEN) await waitWithCountdown(WAIT_NO_TOKEN, '⏳ انتظار (بلا مفتاح)... باقي');
+        if (stopRequested) break;
+        if (i > 0) await wait(waitTime, POLLI_TOKEN ? '⏳ بين المشاهد...' : '⏳ الحد المجاني، صبر شوية... باقي');
+        if (stopRequested) break;
 
-        status.textContent = `🎨 جاري توليد المشهد ${i + 1} من ${numImages}...`;
+        status.textContent = `🎨 جاري توليد المشهد ${i+1}/${numImages}...`;
 
-        let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(basePrompt)}?model=flux&seed=${Date.now()+i}&width=640&height=360&nologo=true`;
-        if (POLLI_TOKEN) url += `&token=${POLLI_TOKEN}`;
+        // أبسط URL ممكن = أقل رفض (بلا nologo ولا model ولا أبعاد)
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(basePrompt)}?seed=${Date.now()+i}`;
 
         let got = null;
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 1; attempt <= 3 && !got && !stopRequested; attempt++) {
             try {
-                const img = await loadImage(url);
-                if (!isPlaceholder(img)) { got = img; break; }
-                // جات مزيفة = limit
-                if (!POLLI_TOKEN) {
-                    status.textContent = '🛑 بلا مفتاح، Pollيناتيونز كيحددو. اضغط زر "🔑 المفتاح" فوق ولصق مفتاح مجاني من enter.pollinations.ai — غادي يتحل المشكل نهائياً.';
-                    blocked = true;
+                const img = await loadImageTO(url);
+                if (!isPlaceholder(img)) {
+                    got = img;
                 } else {
-                    status.textContent = `⚠️ المشهد ${i+1} ترفض، محاولة ثانية...`;
-                    await waitWithCountdown(10, '⏳');
+                    status.textContent = ` المشهد ${i+1} جا limit (محاولة ${attempt}/3)...`;
+                    if (attempt < 3) await wait(waitTime, '⏳ كنعاود، باقي');
                 }
             } catch (e) {
-                status.textContent = `⚠️ خطأ فالتحميل: ${e.message}`;
-                await waitWithCountdown(10, '⏳');
+                status.textContent = `⚠️ المشهد ${i+1} فشل (${e.message})، محاولة ${attempt}/3...`;
+                if (attempt < 3) await wait(15, '⏳ انتظار قصير، باقي');
             }
         }
 
@@ -126,13 +133,23 @@ generateBtn.addEventListener('click', async () => {
             const el = document.createElement('img');
             el.src = got.src;
             imagesPreview.appendChild(el);
+            status.textContent = `✅ المشهد ${i+1} تولد!`;
+        } else if (!stopRequested) {
+            status.textContent = `❌ المشهد ${i+1} ما تسنتجش (السيرفر مشغول). نكملو بالباقي.`;
         }
     }
 
-    if (!blocked) status.textContent = `✅ تم توليد ${generatedImages.length} مشهد!`;
+    status.textContent = `🏁 خلاص: ${generatedImages.length}/${numImages} مشهد جاهز.`;
     generateBtn.disabled = false;
     if (generatedImages.length > 0) createVideoBtn.disabled = false;
 });
+
+// زر إيقاف (باش ما نبقاوش ننتظر بلا فايدة)
+const stopBtn = document.createElement('button');
+stopBtn.textContent = '⏹️ إيقاف';
+stopBtn.style.cssText = 'margin-top:8px;padding:8px 14px;border:none;border-radius:6px;background:#cf6679;color:#000;font-weight:bold;cursor:pointer;';
+stopBtn.onclick = () => { stopRequested = true; status.textContent = '⏹️ تم الإيقاف.'; };
+keyBtn.after(stopBtn);
 
 // 2. إنشاء الفيديو
 createVideoBtn.addEventListener('click', () => {
@@ -158,12 +175,12 @@ createVideoBtn.addEventListener('click', () => {
     mediaRecorder.start();
     (function draw() {
         if (frame >= total) { mediaRecorder.stop(); return; }
-        const idx = Math.floor(frame / (dur*fps));
-        const prog = (frame % (dur*fps)) / (dur*fps);
+        const idx = Math.floor(frame/(dur*fps));
+        const prog = (frame%(dur*fps))/(dur*fps);
         const img = generatedImages[idx];
-        const zoom = 1 + prog*0.1, panX = Math.sin(prog*Math.PI)*20;
+        const zoom = 1+prog*0.1, panX = Math.sin(prog*Math.PI)*20;
         ctx.save();
-        ctx.translate(outputCanvas.width/2 + panX, outputCanvas.height/2);
+        ctx.translate(outputCanvas.width/2+panX, outputCanvas.height/2);
         ctx.scale(zoom, zoom);
         ctx.translate(-outputCanvas.width/2, -outputCanvas.height/2);
         drawCover(img, outputCanvas.width, outputCanvas.height);
