@@ -12,7 +12,7 @@ const downloadLink = document.getElementById('downloadLink');
 // المفتاح كيتحفظ غير فالمتصفح ديالك (localStorage)، وما كيدخلش فالكود
 let GEMINI_KEY = localStorage.getItem('gemini_key') || '';
 const MODEL = 'gemini-2.5-flash-image';
-const WAIT_BETWEEN = 12;
+const WAIT_BETWEEN = 25;
 // =======================
 
 const ctx = outputCanvas.getContext('2d');
