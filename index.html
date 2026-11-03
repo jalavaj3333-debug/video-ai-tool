@@ -3,53 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صانع الفيديو بالذكاء الاصطناعي</title>
+    <title>🎬 Cartoon Studio Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🎬 صانع الفيديو بالذكاء الاصطناعي</h1>
-        <p class="subtitle">اكتب وصفاً وسنحوّله إلى فيديو مجاناً</p>
+    <div class="studio">
+        <header>
+            <h1>🎬 Cartoon Studio Pro</h1>
+            <p class="subtitle">استوديو إنتاج أفلام كرتونية متكامل — بلا حدود، بلا إنترنت</p>
+        </header>
 
-        <div class="controls">
-            <div class="input-group">
-                <label for="promptInput">وصف الفيديو (بالإنجليزية للحصول على أفضل نتيجة):</label>
-                <textarea id="promptInput" placeholder="مثال: A beautiful sunset over the ocean, cinematic, 4k">A majestic lion walking in the savanna, golden hour, cinematic</textarea>
+        <div class="editor">
+            <div class="script-panel">
+                <label for="storyInput">📝 السيناريو (اكتب قصة كاملة):</label>
+                <textarea id="storyInput" rows="8" placeholder="مثال:
+The lion wakes up in the savanna at sunrise and says good morning everyone.
+A monkey swings from tree to tree looking for bananas.
+The elephant trumpets loudly near the river.
+Birds fly across the golden sunset sky.
+The wolf howls under the full moon in the snowy mountains.
+..."></textarea>
+                <div class="script-tools">
+                    <button id="analyzeBtn">🔍 تحليل القصة</button>
+                    <span id="analysisResult" class="analysis-result"></span>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="numImagesInput">عدد المشاهد (صور):</label>
-                <input type="number" id="numImagesInput" min="2" max="10" value="4">
-            </div>
-
-            <div class="input-group">
-                <label for="durationInput">مدة كل مشهد (ثواني):</label>
-                <input type="number" id="durationInput" min="1" max="5" value="2">
-            </div>
-
-            <div class="input-group">
-                <label for="musicToggle">
-                    <input type="checkbox" id="musicToggle"> إضافة موسيقى خلفية
-                </label>
-            </div>
-
-            <div class="buttons">
-                <button id="generateBtn">🎨 توليد الصور</button>
-                <button id="createVideoBtn" disabled>🎬 إنشاء الفيديو</button>
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label>⏱️ مدة المشهد (ثواني):</label>
+                    <input type="range" id="durationSlider" min="1" max="15" value="4" step="0.5">
+                    <span id="durationValue">4s</span>
+                </div>
+                <div class="control-group">
+                    <label>🎵 مستوى الصوت:</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="40">
+                </div>
+                <div class="control-group">
+                    <label>🎥 جودة التسجيل:</label>
+                    <select id="qualitySelect">
+                        <option value="fast">سريع (360p)</option>
+                        <option value="medium" selected>متوسط (720p)</option>
+                        <option value="high">عالي (1080p)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div id="status" class="status">جاهز للبدء...</div>
-
-        <div id="imagesPreview" class="images-preview"></div>
-
-        <div class="preview-area">
-            <canvas id="outputCanvas" width="640" height="360"></canvas>
+        <div class="preview-section">
+            <div class="timeline" id="timeline"></div>
+            <div class="canvas-wrapper">
+                <canvas id="outputCanvas" width="1280" height="720"></canvas>
+                <div id="playbackOverlay" class="playback-overlay">
+                    <button id="previewBtn">▶️ معاينة المشهد</button>
+                </div>
+            </div>
+            <div class="action-bar">
+                <button id="generateAllBtn" class="primary-btn">🎬 إنتاج الفيلم الكامل</button>
+                <button id="stopBtn" class="danger-btn" style="display:none;">⏹️ إيقاف</button>
+                <a id="downloadLink" class="download-btn" style="display:none;">⬇️ تحميل الفيلم</a>
+            </div>
+            <div id="statusBar" class="status-bar">جاهز للبدء...</div>
         </div>
-
-        <a id="downloadLink" style="display: none;" class="download-btn">⬇️ تحميل الفيديو</a>
     </div>
 
-    <script src="script.js"></script>
+    <!-- تحميل الملفات بالترتيب الصحيح -->
+    <script src="characters.js"></script>
+    <script src="engine.js"></script>
 </body>
 </html>
