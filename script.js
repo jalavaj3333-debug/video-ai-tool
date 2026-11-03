@@ -60,25 +60,26 @@ function loadImageTO(url, ms = 75000) {
 }
 
 // كشف الصور المزيفة (الصفرا/الوردية ديال "limit reached")
+
 function isPlaceholder(img) {
     try {
         const c = document.createElement('canvas');
-        c.width = 16; c.height = 16;
+        c.width = 32; c.height = 32;
         const x = c.getContext('2d');
-        x.drawImage(img, 0, 0, 16, 16);
-        const d = x.getImageData(0, 0, 16, 16).data;
-        let r=0,g=0,b=0;
-        for (let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-        r/=256; g/=256; b/=256;
-        let v=0;
-        for (let i=0;i<d.length;i+=4) v += (d[i]-r)**2+(d[i+1]-g)**2+(d[i+2]-b)**2;
-        v/=256;
-        const yellow = r>200 && g>170 && b<160;
-        const pink   = r>220 && g>190 && b>180 && b<225;
-        return v < 1800 && (yellow || pink);
-    } catch(e){ return false; }
+        x.drawImage(img, 0, 0, 32, 32);
+        const d = x.getImageData(0, 0, 32, 32).data;
+        const total = 32 * 32;
+        let yellow = 0, pink = 0;
+        for (let i = 0; i < d.length; i += 4) {
+            const r = d[i], g = d[i+1], b = d[i+2];
+            if (r > 225 && g > 175 && b < 160) yellow++;            // أصفر Pollinations
+            if (r > 225 && g > 175 && b >= 160 && b < 235) pink++;  // وردي "refused"
+        }
+        if (yellow / total > 0.45) return true;
+        if (pink / total > 0.45) return true;
+        return false;
+    } catch (e) { return false; }
 }
-
 function drawCover(image, w, h) {
     const ir = image.width/image.height, cr = w/h;
     let sx=0,sy=0,sw=image.width,sh=image.height;
