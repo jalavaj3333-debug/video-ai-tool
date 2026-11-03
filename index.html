@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صانع الفيديو بالذكاء الاصطناعي</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 صانع الفيديو بالذكاء الاصطناعي</h1>
+        <p class="subtitle">اكتب وصفاً وسنحوّله إلى فيديو مجاناً</p>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="promptInput">وصف الفيديو (بالإنجليزية للحصول على أفضل نتيجة):</label>
+                <textarea id="promptInput" placeholder="مثال: A beautiful sunset over the ocean, cinematic, 4k">A majestic lion walking in the savanna, golden hour, cinematic</textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="numImagesInput">عدد المشاهد (صور):</label>
+                <input type="number" id="numImagesInput" min="2" max="10" value="4">
+            </div>
+
+            <div class="input-group">
+                <label for="durationInput">مدة كل مشهد (ثواني):</label>
+                <input type="number" id="durationInput" min="1" max="5" value="2">
+            </div>
+
+            <div class="input-group">
+                <label for="musicToggle">
+                    <input type="checkbox" id="musicToggle"> إضافة موسيقى خلفية
+                </label>
+            </div>
+
+            <div class="buttons">
+                <button id="generateBtn">🎨 توليد الصور</button>
+                <button id="createVideoBtn" disabled>🎬 إنشاء الفيديو</button>
+            </div>
+        </div>
+
+        <div id="status" class="status">جاهز للبدء...</div>
+
+        <div id="imagesPreview" class="images-preview"></div>
+
+        <div class="preview-area">
+            <canvas id="outputCanvas" width="640" height="360"></canvas>
+        </div>
+
+        <a id="downloadLink" style="display: none;" class="download-btn">⬇️ تحميل الفيديو</a>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
