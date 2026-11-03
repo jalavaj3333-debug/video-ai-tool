@@ -1,4 +1,3 @@
-// ====== العناصر ======
 const promptInput = document.getElementById('promptInput');
 const numImagesInput = document.getElementById('numImagesInput');
 const durationInput = document.getElementById('durationInput');
@@ -10,121 +9,125 @@ const outputCanvas = document.getElementById('outputCanvas');
 const downloadLink = document.getElementById('downloadLink');
 
 // ====== الإعدادات ======
-const POLLINATIONS_TOKEN = ''; // إلا خذيت توكن مجاني من enter.pollinations.ai لصقوه هنا
-const WAIT_SECONDS = 46;
-const WIDTH = 640;
-const HEIGHT = 360;
+// المفتاح كيتحفظ غير فالمتصفح ديالك (localStorage)، وما كيدخلش فالكود
+let GEMINI_KEY = localStorage.getItem('gemini_key') || '';
+const MODEL = 'gemini-2.5-flash-image';
+const WAIT_BETWEEN = 12;
 // =======================
 
 const ctx = outputCanvas.getContext('2d');
 let generatedImages = [];
 let mediaRecorder;
 let recordedChunks = [];
-let firstRequestDone = false;
 
-function waitWithCountdown(seconds) {
+function waitWithCountdown(seconds, msg) {
     return new Promise((resolve) => {
         let left = seconds;
-        status.textContent = `⏳ كنصبرو على الحد المجاني... باقي ${left} ثانية`;
+        status.textContent = `${msg} (${left})`;
         const timer = setInterval(() => {
             left--;
-            status.textContent = `⏳ كنصبرو على الحد المجاني... باقي ${left} ثانية`;
+            status.textContent = `${msg} (${left})`;
             if (left <= 0) { clearInterval(timer); resolve(); }
         }, 1000);
     });
 }
 
+async function generateImageGemini(prompt) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+        })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    const data = await res.json();
+    const parts = (data.candidates && data.candidates[0].content.parts) || [];
+    let inline = null;
+    for (const p of parts) { if (p.inlineData) { inline = p.inlineData; break; } }
+    if (!inline) throw new Error('ما كاينة حتى صورة فالجواب');
+
+    const bin = atob(inline.data);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const blob = new Blob([arr], { type: inline.mimeType || 'image/png' });
+    return URL.createObjectURL(blob);
+}
+
 function loadImage(url) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = reject;
         img.src = url;
     });
 }
 
-// 🔎 كشف الصور المزيفة (رسالة الحد المجاني أو الرفض)
-function isBadImage(img) {
-    // 1) الصورة الحقيقية خاصها تكون بالمقاس المطلوب بالضبط
-    if (img.naturalWidth !== WIDTH || img.naturalHeight !== HEIGHT) return true;
-    // 2) فحص الألوان: إلا كانت الأركان الأربعة بنفس اللون الفاتح = رسالة ماشي صورة
-    try {
-        const c = document.createElement('canvas');
-        c.width = WIDTH; c.height = HEIGHT;
-        const cx = c.getContext('2d');
-        cx.drawImage(img, 0, 0);
-        const pts = [[5,5],[WIDTH-6,5],[5,HEIGHT-6],[WIDTH-6,HEIGHT-6]];
-        const cols = pts.map(p => Array.from(cx.getImageData(p[0], p[1], 1, 1).data));
-        const same = cols.every(cl =>
-            Math.abs(cl[0]-cols[0][0]) < 15 &&
-            Math.abs(cl[1]-cols[0][1]) < 15 &&
-            Math.abs(cl[2]-cols[0][2]) < 15
-        );
-        const bright = cols[0][0] > 200 && cols[0][1] > 170;
-        return same && bright;
-    } catch (e) { return false; }
+function drawCover(image, w, h) {
+    const ir = image.width / image.height, cr = w / h;
+    let sx = 0, sy = 0, sw = image.width, sh = image.height;
+    if (ir > cr) { sw = image.height * cr; sx = (image.width - sw) / 2; }
+    else { sh = image.width / cr; sy = (image.height - sh) / 2; }
+    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, w, h);
 }
 
-// تنظيم وتيرة الطلبات
-async function pace() {
-    if (POLLINATIONS_TOKEN) return; // بالتوكن ما كاينش انتظار
-    if (!firstRequestDone) { firstRequestDone = true; return; }
-    await waitWithCountdown(WAIT_SECONDS);
-}
-
-// جلب صورة حقيقية مع محاولات تلقائية
-async function fetchGoodImage(prompt, index, total) {
-    const maxTries = 4;
-    for (let t = 0; t < maxTries; t++) {
-        await pace();
-        status.textContent = `🎨 كنولدو الصورة ${index + 1} من ${total}... (محاولة ${t + 1})`;
-        const seed = Date.now() + index * 100 + t;
-        let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${WIDTH}&height=${HEIGHT}&seed=${seed}`;
-        if (POLLINATIONS_TOKEN) url += `&token=${POLLINATIONS_TOKEN}&nologo=true`;
-        try {
-            const img = await loadImage(url);
-            if (!isBadImage(img)) return img;
-            status.textContent = `⚠️ صورة مزيفة (حد مجاني/رفض)، كنعاودو المحاولة...`;
-        } catch (e) {
-            status.textContent = `⚠️ خطأ فال تحميل، كنعاودو المحاولة...`;
-        }
-    }
-    return null;
-}
-
-// 1) توليد الصور
+// 1. توليد الصور
 generateBtn.addEventListener('click', async () => {
-    const prompt = promptInput.value.trim();
+    const basePrompt = promptInput.value.trim();
     const numImages = parseInt(numImagesInput.value);
-    if (!prompt) { alert('الرجاء إدخال وصف للفيديو'); return; }
+
+    if (!basePrompt) { alert('الرجاء إدخال وصف للفيديو'); return; }
+
+    // إلا ما كانش مفتاح محفوظ، طلبوه من المستخدم مرة وحدة
+    if (!GEMINI_KEY) {
+        const k = window.prompt('🔑 لصق مفتاح Gemini ديالك هنا:\n(غادي يتحفظ غير فالمتصفح ديالك، وما غاديش يدخل فالكواد)');
+        if (!k || !k.trim()) {
+            status.textContent = '❌ ما دخلتيش المفتاح.';
+            return;
+        }
+        GEMINI_KEY = k.trim();
+        localStorage.setItem('gemini_key', GEMINI_KEY);
+    }
 
     generateBtn.disabled = true;
     createVideoBtn.disabled = true;
     imagesPreview.innerHTML = '';
     generatedImages = [];
-    firstRequestDone = false;
 
     for (let i = 0; i < numImages; i++) {
-        const img = await fetchGoodImage(prompt, i, numImages);
-        if (img) {
-            generatedImages.push(img);
-            const el = document.createElement('img');
-            el.src = img.src;
-            imagesPreview.appendChild(el);
+        if (i > 0) await waitWithCountdown(WAIT_BETWEEN, '⏳ انتظار بين المشاهد... باقي');
+
+        status.textContent = `🎨 جاري توليد المشهد ${i + 1} من ${numImages}...`;
+
+        const prompt = `${basePrompt}. Scene ${i + 1} of ${numImages}, different camera angle, cinematic, highly detailed`;
+
+        let ok = false;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                const objUrl = await generateImageGemini(prompt);
+                const img = await loadImage(objUrl);
+                generatedImages.push(img);
+                const el = document.createElement('img');
+                el.src = objUrl;
+                imagesPreview.appendChild(el);
+                ok = true;
+                break;
+            } catch (e) {
+                console.error(e);
+                status.textContent = `⚠️ فشل المشهد ${i + 1}، محاولة ثانية...`;
+                await waitWithCountdown(20, '⏳ انتظار... باقي');
+            }
         }
+        if (!ok) status.textContent = `❌ المشهد ${i + 1} ترفض، نكملو بالباقي.`;
     }
 
-    if (generatedImages.length === 0) {
-        status.textContent = '❌ ما تولدات حتى صورة حقيقية. أحسن حل: زيد التوكن المجاني (enter.pollinations.ai).';
-    } else {
-        status.textContent = `✅ تولدات ${generatedImages.length} صورة حقيقية! اضغط "إنشاء الفيديو".`;
-        createVideoBtn.disabled = false;
-    }
+    status.textContent = `✅ تم توليد ${generatedImages.length} مشهد!`;
     generateBtn.disabled = false;
+    if (generatedImages.length > 0) createVideoBtn.disabled = false;
 });
 
-// 2) إنشاء الفيديو
+// 2. إنشاء الفيديو
 createVideoBtn.addEventListener('click', () => {
     if (generatedImages.length === 0) return;
 
@@ -158,9 +161,9 @@ createVideoBtn.addEventListener('click', () => {
 
     function drawFrame() {
         if (currentFrame >= totalFrames) { mediaRecorder.stop(); return; }
+
         const imageIndex = Math.floor(currentFrame / (durationPerImage * fps));
-        const frameInImage = currentFrame % (durationPerImage * fps);
-        const progress = frameInImage / (durationPerImage * fps);
+        const progress = (currentFrame % (durationPerImage * fps)) / (durationPerImage * fps);
         const img = generatedImages[imageIndex];
 
         const zoom = 1 + progress * 0.1;
@@ -170,11 +173,12 @@ createVideoBtn.addEventListener('click', () => {
         ctx.translate(outputCanvas.width / 2 + panX, outputCanvas.height / 2);
         ctx.scale(zoom, zoom);
         ctx.translate(-outputCanvas.width / 2, -outputCanvas.height / 2);
-        ctx.drawImage(img, 0, 0, outputCanvas.width, outputCanvas.height);
+        drawCover(img, outputCanvas.width, outputCanvas.height);
         ctx.restore();
 
         currentFrame++;
         requestAnimationFrame(drawFrame);
     }
+
     drawFrame();
 });
