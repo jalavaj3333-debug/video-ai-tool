@@ -8,67 +8,135 @@
 </head>
 <body>
     <div class="studio">
+
         <header>
             <h1>🎬 Cartoon Studio Pro</h1>
-            <p class="subtitle">استوديو إنتاج أفلام كرتونية متكامل — بلا حدود، بلا إنترنت</p>
+            <p class="subtitle">
+                استوديو إنتاج أفلام كرتونية — نسخة GitHub
+            </p>
         </header>
 
         <div class="editor">
+
             <div class="script-panel">
-                <label for="storyInput">📝 السيناريو (اكتب قصة كاملة):</label>
-                <textarea id="storyInput" rows="8" placeholder="مثال:
-The lion wakes up in the savanna at sunrise and says good morning everyone.
-A monkey swings from tree to tree looking for bananas.
-The elephant trumpets loudly near the river.
-Birds fly across the golden sunset sky.
-The wolf howls under the full moon in the snowy mountains.
-..."></textarea>
+                <label for="promptInput">📝 السيناريو (اكتب قصتك):</label>
+
+                <textarea
+                    id="promptInput"
+                    rows="8"
+                    placeholder="The lion wakes up in the forest at sunrise.
+The monkey meets the elephant.
+The animals start a new adventure."
+                ></textarea>
+
                 <div class="script-tools">
-                    <button id="analyzeBtn">🔍 تحليل القصة</button>
+                    <button id="generateBtn">🔍 تحليل القصة</button>
                     <span id="analysisResult" class="analysis-result"></span>
                 </div>
             </div>
 
             <div class="controls-panel">
+
                 <div class="control-group">
-                    <label>⏱️ مدة المشهد (ثواني):</label>
-                    <input type="range" id="durationSlider" min="1" max="15" value="4" step="0.5">
+                    <label for="durationInput">⏱️ مدة كل مشهد:</label>
+                    <input
+                        type="range"
+                        id="durationInput"
+                        min="1"
+                        max="10"
+                        value="4"
+                        step="1"
+                    >
                     <span id="durationValue">4s</span>
                 </div>
+
                 <div class="control-group">
-                    <label>🎵 مستوى الصوت:</label>
-                    <input type="range" id="volumeSlider" min="0" max="100" value="40">
+                    <label for="volumeSlider">🎵 مستوى الصوت:</label>
+                    <input
+                        type="range"
+                        id="volumeSlider"
+                        min="0"
+                        max="100"
+                        value="40"
+                    >
                 </div>
+
                 <div class="control-group">
-                    <label>🎥 جودة التسجيل:</label>
+                    <label for="qualitySelect">🎥 جودة التسجيل:</label>
                     <select id="qualitySelect">
                         <option value="fast">سريع (360p)</option>
                         <option value="medium" selected>متوسط (720p)</option>
                         <option value="high">عالي (1080p)</option>
                     </select>
                 </div>
+
             </div>
         </div>
 
         <div class="preview-section">
-            <div class="timeline" id="timeline"></div>
+
+            <h3>🎞️ المشاهد</h3>
+            <div class="timeline" id="imagesPreview"></div>
+
             <div class="canvas-wrapper">
-                <canvas id="outputCanvas" width="1280" height="720"></canvas>
+                <canvas
+                    id="outputCanvas"
+                    width="1280"
+                    height="720"
+                ></canvas>
+
                 <div id="playbackOverlay" class="playback-overlay">
-                    <button id="previewBtn">▶️ معاينة المشهد</button>
+                    <button id="previewBtn" type="button">
+                        ▶️ معاينة المشهد
+                    </button>
                 </div>
             </div>
+
             <div class="action-bar">
-                <button id="generateAllBtn" class="primary-btn">🎬 إنتاج الفيلم الكامل</button>
-                <button id="stopBtn" class="danger-btn" style="display:none;">⏹️ إيقاف</button>
-                <a id="downloadLink" class="download-btn" style="display:none;">⬇️ تحميل الفيلم</a>
+                <button
+                    id="createVideoBtn"
+                    class="primary-btn"
+                    disabled
+                >
+                    🎬 إنتاج الفيلم الكامل
+                </button>
+
+                <button
+                    id="stopBtn"
+                    class="danger-btn"
+                    style="display:none;"
+                    type="button"
+                >
+                    ⏹️ إيقاف
+                </button>
+
+                <a
+                    id="downloadLink"
+                    class="download-btn"
+                    style="display:none;"
+                >
+                    ⬇️ تحميل الفيلم
+                </a>
             </div>
-            <div id="statusBar" class="status-bar">جاهز للبدء...</div>
+
+            <div id="status" class="status-bar">
+                جاهز للبدء...
+            </div>
+
         </div>
     </div>
 
-    <!-- تحميل الملفات بالترتيب الصحيح -->
     <script src="characters.js"></script>
     <script src="engine.js"></script>
+
+    <script>
+        const duration = document.getElementById("durationInput");
+        const durationValue = document.getElementById("durationValue");
+
+        duration.addEventListener("input", function () {
+            durationValue.textContent = this.value + "s";
+        });
+    </script>
+
 </body>
 </html>
