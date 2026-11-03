@@ -1,142 +1,121 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎬 Cartoon Studio Pro</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090b14">
+  <meta name="description" content="AI Video Studio Pro - استوديو صناعة الفيديو والقصص المصورة">
+  <title>AI Video Studio Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="studio">
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="AI Video Studio Pro">
+        <span class="brand-mark">✦</span>
+        <span><b>AI VIDEO</b><small>STUDIO PRO</small></span>
+      </a>
+      <div class="workspace-label">مساحة العمل</div>
+      <nav class="nav-list">
+        <a class="nav-item active" href="#studio"><span>▣</span> الاستوديو <kbd>01</kbd></a>
+        <a class="nav-item" href="#story"><span>✎</span> كاتب القصص</a>
+        <a class="nav-item" href="#timeline"><span>▤</span> لوحة المشاهد</a>
+        <a class="nav-item" href="#export"><span>⇧</span> التصدير</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="plan-card">
+          <div class="plan-icon">✧</div>
+          <b>نسخة مجانية</b>
+          <p>واجهة محلية قابلة للنشر على GitHub Pages.</p>
+          <span class="plan-status"><i></i> جاهز للعمل</span>
+        </div>
+        <div class="user-mini"><div class="avatar">A</div><span><b>Creator Studio</b><small>مشروع جديد</small></span><span class="dots">•••</span></div>
+      </div>
+    </aside>
 
-        <header>
-            <h1>🎬 Cartoon Studio Pro</h1>
-            <p class="subtitle">
-                استوديو إنتاج أفلام كرتونية — نسخة GitHub
-            </p>
-        </header>
+    <main class="main-content" id="studio">
+      <header class="topbar">
+        <button class="icon-btn mobile-menu" id="menuBtn" aria-label="فتح القائمة">☰</button>
+        <div class="breadcrumbs"><span>مساحة العمل</span><b>/</b><strong>استوديو الفيديو</strong></div>
+        <div class="top-actions">
+          <span class="local-badge"><i></i> وضع المعاينة</span>
+          <button class="icon-btn" id="helpBtn" title="معلومات">?</button>
+          <div class="avatar top-avatar">A</div>
+        </div>
+      </header>
 
-        <div class="editor">
+      <section class="welcome-row">
+        <div>
+          <div class="eyebrow"><span class="sparkle">✦</span> CREATE • IMAGINE • PRODUCE</div>
+          <h1>حوّل قصتك إلى <em>فيلم</em></h1>
+          <p>اكتب الفكرة، حضّر المشاهد، وشاهد تصورك السينمائي في مكان واحد.</p>
+        </div>
+        <button class="secondary-btn" id="newProjectBtn"><span>＋</span> مشروع جديد</button>
+      </section>
 
-            <div class="script-panel">
-                <label for="promptInput">📝 السيناريو (اكتب قصتك):</label>
-
-                <textarea
-                    id="promptInput"
-                    rows="8"
-                    placeholder="The lion wakes up in the forest at sunrise.
-The monkey meets the elephant.
-The animals start a new adventure."
-                ></textarea>
-
-                <div class="script-tools">
-                    <button id="generateBtn">🔍 تحليل القصة</button>
-                    <span id="analysisResult" class="analysis-result"></span>
-                </div>
+      <section class="workspace-grid">
+        <div class="left-column">
+          <section class="panel story-panel" id="story">
+            <div class="panel-heading">
+              <div><span class="step-number">01</span><div><h2>الفكرة والسيناريو</h2><p>ابدأ بوصف القصة التي تريد تحويلها إلى فيديو</p></div></div>
+              <span class="soft-tag">STORY INPUT</span>
             </div>
-
-            <div class="controls-panel">
-
-                <div class="control-group">
-                    <label for="durationInput">⏱️ مدة كل مشهد:</label>
-                    <input
-                        type="range"
-                        id="durationInput"
-                        min="1"
-                        max="10"
-                        value="4"
-                        step="1"
-                    >
-                    <span id="durationValue">4s</span>
-                </div>
-
-                <div class="control-group">
-                    <label for="volumeSlider">🎵 مستوى الصوت:</label>
-                    <input
-                        type="range"
-                        id="volumeSlider"
-                        min="0"
-                        max="100"
-                        value="40"
-                    >
-                </div>
-
-                <div class="control-group">
-                    <label for="qualitySelect">🎥 جودة التسجيل:</label>
-                    <select id="qualitySelect">
-                        <option value="fast">سريع (360p)</option>
-                        <option value="medium" selected>متوسط (720p)</option>
-                        <option value="high">عالي (1080p)</option>
-                    </select>
-                </div>
-
+            <label class="field-label" for="storyInput">وصف القصة</label>
+            <textarea id="storyInput" rows="6" placeholder="مثال: في غابة سحرية، يستيقظ أسد صغير مع شروق الشمس. يلتقي بأرنب يبحث عن طريق العودة إلى منزله، فيقرران خوض مغامرة معاً..."></textarea>
+            <div class="textarea-footer"><span id="charCount">0 حرف</span><button class="text-btn" id="exampleBtn">جرّب قصة نموذجية ↗</button></div>
+            <div class="story-options">
+              <div class="option-field"><label for="styleSelect">نمط الفيديو</label><select id="styleSelect"><option value="3d">كرتون ثلاثي الأبعاد</option><option value="2d">كرتون ثنائي الأبعاد</option><option value="cinematic">سينمائي واقعي (تصور)</option></select></div>
+              <div class="option-field"><label for="languageSelect">لغة القصة</label><select id="languageSelect"><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option><option value="darija">الدارجة المغربية</option></select></div>
+              <div class="option-field"><label for="sceneDuration">مدة المشهد</label><select id="sceneDuration"><option value="5">5 ثوانٍ</option><option value="8" selected>8 ثوانٍ</option><option value="10">10 ثوانٍ</option><option value="15">15 ثانية</option></select></div>
             </div>
+            <div class="panel-actions"><span class="hint">✦ يتم تقسيم النص محلياً في هذه النسخة</span><button class="primary-btn" id="analyzeBtn"><span>✧</span> تحليل القصة وإنشاء المشاهد</button></div>
+          </section>
+
+          <section class="panel storyboard-panel" id="timeline">
+            <div class="panel-heading">
+              <div><span class="step-number">02</span><div><h2>لوحة المشاهد</h2><p>راجع تسلسل القصة واختر مشهداً للمعاينة</p></div></div>
+              <span class="count-tag" id="sceneCount">0 مشاهد</span>
+            </div>
+            <div class="empty-state" id="emptyState"><div class="empty-art"><span>▧</span><i>✦</i></div><b>المشاهد ديالك غادي يظهرو هنا</b><p>كتب القصة ديالك واضغط على «تحليل القصة» للبدء.</p></div>
+            <div class="scene-grid" id="sceneGrid"></div>
+          </section>
         </div>
 
-        <div class="preview-section">
-
-            <h3>🎞️ المشاهد</h3>
-            <div class="timeline" id="imagesPreview"></div>
-
-            <div class="canvas-wrapper">
-                <canvas
-                    id="outputCanvas"
-                    width="1280"
-                    height="720"
-                ></canvas>
-
-                <div id="playbackOverlay" class="playback-overlay">
-                    <button id="previewBtn" type="button">
-                        ▶️ معاينة المشهد
-                    </button>
-                </div>
+        <div class="right-column">
+          <section class="panel preview-panel">
+            <div class="panel-heading compact"><div><span class="live-dot"></span><div><h2>معاينة الفيديو</h2><p id="previewLabel">المشهد الرئيسي</p></div></div><span class="ratio-tag">16:9</span></div>
+            <div class="preview-screen">
+              <canvas id="previewCanvas" width="960" height="540"></canvas>
+              <div class="preview-placeholder" id="previewPlaceholder"><div class="play-symbol">▶</div><b>المعاينة السينمائية</b><small>أنشئ المشاهد لعرضها هنا</small></div>
+              <div class="screen-top-label">AI VIDEO STUDIO <span>PREVIEW</span></div>
+              <div class="screen-bottom-label"><span id="currentSceneLabel">لا يوجد مشهد</span><span>● REC</span></div>
             </div>
+            <div class="preview-controls"><button class="round-play" id="playBtn" aria-label="تشغيل المعاينة">▶</button><div class="progress-wrap"><div class="progress-meta"><span id="playState">جاهز للمعاينة</span><span id="timeLabel">00:00</span></div><div class="progress-track"><i id="progressBar"></i></div></div><button class="icon-btn" id="fullscreenBtn" title="ملء الشاشة">⛶</button></div>
+            <div class="preview-note"><span>ⓘ</span> المعاينة الحالية رسومات تجريبية وليست توليداً بالذكاء الاصطناعي.</div>
+          </section>
 
-            <div class="action-bar">
-                <button
-                    id="createVideoBtn"
-                    class="primary-btn"
-                    disabled
-                >
-                    🎬 إنتاج الفيلم الكامل
-                </button>
+          <section class="panel settings-panel">
+            <div class="panel-heading compact"><div><span class="step-number">03</span><div><h2>إعدادات الإنتاج</h2><p>خصص إخراج مشروعك</p></div></div></div>
+            <div class="setting-row"><div><b>جودة الفيديو</b><small>دقة الإخراج</small></div><select id="qualitySelect"><option value="720">HD • 720p</option><option value="1080">Full HD • 1080p</option><option value="480">SD • 480p</option></select></div>
+            <div class="setting-row"><div><b>الموسيقى</b><small>صوت تجريبي للمعاينة</small></div><label class="switch"><input type="checkbox" id="musicToggle" checked><span></span></label></div>
+            <div class="setting-row volume-row"><div><b>مستوى الصوت</b><small id="volumeValue">40%</small></div><input type="range" id="volumeSlider" min="0" max="100" value="40"></div>
+            <div class="setting-row"><div><b>الانتقالات</b><small>بين المشاهد</small></div><select id="transitionSelect"><option value="fade">تلاشي</option><option value="cut">قطع مباشر</option><option value="slide">انزلاق (تصوري)</option></select></div>
+          </section>
 
-                <button
-                    id="stopBtn"
-                    class="danger-btn"
-                    style="display:none;"
-                    type="button"
-                >
-                    ⏹️ إيقاف
-                </button>
-
-                <a
-                    id="downloadLink"
-                    class="download-btn"
-                    style="display:none;"
-                >
-                    ⬇️ تحميل الفيلم
-                </a>
-            </div>
-
-            <div id="status" class="status-bar">
-                جاهز للبدء...
-            </div>
-
+          <section class="export-card" id="export">
+            <div class="export-icon">⇧</div><div class="export-copy"><b>جاهز لإخراج مشروعك؟</b><p>صدّر معاينة المشاهد بصيغة WebM.</p></div>
+            <button id="exportBtn" class="export-btn" disabled>تصدير الفيديو <span>↗</span></button>
+            <small id="exportStatus">أنشئ المشاهد أولاً لتفعيل التصدير.</small>
+          </section>
         </div>
-    </div>
-
-    <script src="characters.js"></script>
-    <script src="engine.js"></script>
-
-    <script>
-        const duration = document.getElementById("durationInput");
-        const durationValue = document.getElementById("durationValue");
-
-        duration.addEventListener("input", function () {
-            durationValue.textContent = this.value + "s";
-        });
-    </script>
-
+      </section>
+      <footer><span>AI VIDEO STUDIO PRO</span><span>واجهة تجريبية مجانية • GitHub Pages Ready</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="js/app.js"></script>
 </body>
 </html>
