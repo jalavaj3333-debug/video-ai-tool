@@ -182,6 +182,8 @@
         let scenes = [];
         let currentSceneIndex = 0;
         let isPlaying = false;
+        let animationFrameId;
+        let transitionAlpha = 1; // للتلاشي (Fade in)
 
         // دالة تقسيم القصة وتحليل الشخصيات
         function generateScenes() {
@@ -195,7 +197,7 @@
                     id: index + 1,
                     text: sentence,
                     theme: getTheme(sentence),
-                    characters: getCharacters(sentence), // استخراج الشخصيات
+                    characters: getCharacters(sentence),
                     duration: 3 // المدة الافتراضية 3 ثواني
                 };
             });
@@ -203,6 +205,7 @@
             renderTimeline();
             if (scenes.length > 0) {
                 currentSceneIndex = 0;
+                transitionAlpha = 1;
                 drawScene(scenes[0]);
                 playBtn.disabled = false;
             }
@@ -245,6 +248,7 @@
                 item.onclick = (e) => {
                     if(e.target.tagName !== 'INPUT') {
                         currentSceneIndex = index;
+                        transitionAlpha = 1;
                         renderTimeline();
                         drawScene(scene);
                     }
@@ -260,6 +264,9 @@
 
         // رسم المشهد والشخصيات
         function drawScene(scene) {
+            // مسح الشاشة
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             // 1. رسم الخلفية
             let skyColor = '#1e1b4b'; let groundColor = '#374151';
             if (scene.theme === 'forest') { skyColor = '#064e3b'; groundColor = '#065f46'; }
@@ -278,84 +285,88 @@
             ctx.fillStyle = scene.theme === 'night' ? '#e2e8f0' : '#fbbf24';
             ctx.fill();
 
-            // 2. رسم الشخصيات (Sprites)
-            let xOffset = canvas.width / 3; // البداية من الثلث
+            // 2. رسم الشخصيات (Sprites) بترتيب وتوزيع أفضل
+            let startX = (canvas.width - (scene.characters.length * 150)) / 2; // لتوسيط الشخصيات
+            let xOffset = startX;
+            
             scene.characters.forEach(char => {
-                drawCharacter(char, xOffset, canvas.height * 0.7);
-                xOffset += 150; // مسافة بين الشخصيات
+                drawCharacter(char, xOffset, canvas.height * 0.75); // رفعهم شوية على الأرض
+                xOffset += 150; 
             });
 
-            // 3. كتابة النص
+            // 3. النص مع خلفية سوداء شفافة
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+            
             ctx.fillStyle = 'white';
             ctx.font = 'bold 22px Cairo';
             ctx.textAlign = 'center';
             ctx.shadowColor = 'black';
-            ctx.shadowBlur = 10;
-            // تقسيم النص إذا كان طويلاً
-            const maxWidth = canvas.width - 100;
-            const words = scene.text.split(' ');
-            let line = '';
-            let y = canvas.height - 80;
-            
-            // رسم خلفية سوداء شفافة للنص
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-            
-            ctx.fillStyle = 'white';
-            ctx.shadowColor = 'black';
             ctx.shadowBlur = 5;
-            ctx.fillText(scene.text, canvas.width / 2, canvas.height - 40);
+            ctx.fillText(scene.text, canvas.width / 2, canvas.height - 30);
             ctx.shadowBlur = 0;
+
+            // 4. تطبيق الانتقال (Fade In) إذا كان في بداية المشهد
+            if (transitionAlpha < 1) {
+                ctx.fillStyle = `rgba(0,0,0,${1 - transitionAlpha})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                transitionAlpha += 0.05; // سرعة التلاشي
+                animationFrameId = requestAnimationFrame(() => drawScene(scene));
+            } else {
+                cancelAnimationFrame(animationFrameId);
+            }
         }
 
-        // دالة رسم الشخصيات الكرتونية
+        // دالة رسم الشخصيات الكرتونية (محسنة)
         function drawCharacter(type, x, groundY) {
-            const size = 50; // حجم الشخصية
+            const size = 45; 
             ctx.save();
             ctx.translate(x, groundY);
 
+            // رسم ظل تحت الشخصية
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath(); ctx.ellipse(0, 0, size*0.8, 10, 0, 0, Math.PI * 2); ctx.fill();
+
             if (type === 'lion') {
-                // جسم الأسد (دائرة كبيرة)
-                ctx.fillStyle = '#f59e0b'; // برتقالي/أصفر
-                ctx.beginPath(); ctx.arc(0, -size, size, 0, Math.PI * 2); ctx.fill();
-                // رأس الأسد (لبدة)
-                ctx.fillStyle = '#d97706'; // برتقالي غامق
-                ctx.beginPath(); ctx.arc(0, -size*1.5, size*0.7, 0, Math.PI * 2); ctx.fill();
-                // وجه
-                ctx.fillStyle = '#fcd34d';
-                ctx.beginPath(); ctx.arc(0, -size*1.5, size*0.5, 0, Math.PI * 2); ctx.fill();
+                // جسم
+                ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(0, -size, size, 0, Math.PI * 2); ctx.fill();
+                // رأس ولبدة
+                ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(0, -size*1.8, size*0.8, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, -size*1.8, size*0.5, 0, Math.PI * 2); ctx.fill();
+                // عيون
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(-10, -size*1.9, 4, 0, Math.PI*2); ctx.arc(10, -size*1.9, 4, 0, Math.PI*2); ctx.fill();
             } 
             else if (type === 'rabbit') {
-                // جسم الأرنب
-                ctx.fillStyle = '#f3f4f6'; // أبيض
+                ctx.fillStyle = '#f3f4f6'; 
+                // جسم
                 ctx.beginPath(); ctx.ellipse(0, -size*0.8, size*0.7, size, 0, 0, Math.PI * 2); ctx.fill();
-                // أذنان
-                ctx.beginPath(); ctx.ellipse(-10, -size*1.8, 10, 30, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(10, -size*1.8, 10, 30, 0, 0, Math.PI * 2); ctx.fill();
-                // عين
-                ctx.fillStyle = '#111';
-                ctx.beginPath(); ctx.arc(-10, -size*1.2, 3, 0, Math.PI * 2); ctx.fill();
+                // أذنان طويلتان
+                ctx.beginPath(); ctx.ellipse(-12, -size*1.9, 8, 25, 0.1, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(12, -size*1.9, 8, 25, -0.1, 0, Math.PI * 2); ctx.fill();
+                // عيون
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(-12, -size*1.2, 3, 0, Math.PI*2); ctx.arc(12, -size*1.2, 3, 0, Math.PI*2); ctx.fill();
             }
             else if (type === 'elephant') {
-                // جسم الفيل
-                ctx.fillStyle = '#94a3b8'; // رمادي
-                ctx.beginPath(); ctx.ellipse(0, -size*1.2, size*1.2, size*1.5, 0, 0, Math.PI * 2); ctx.fill();
-                // خرطوم
-                ctx.fillStyle = '#64748b';
-                ctx.beginPath(); ctx.moveTo(0, -size*1.5); ctx.quadraticCurveTo(40, -size, 30, 0); ctx.lineWidth = 15; ctx.strokeStyle = '#64748b'; ctx.stroke();
+                ctx.fillStyle = '#94a3b8'; 
+                // جسم
+                ctx.beginPath(); ctx.ellipse(0, -size*1.2, size*1.2, size*1.4, 0, 0, Math.PI * 2); ctx.fill();
+                // خرطوم منحني
+                ctx.strokeStyle = '#64748b'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(0, -size*1.5); ctx.quadraticCurveTo(50, -size*1.2, 30, 0); ctx.stroke();
+                // عيون
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(-15, -size*1.8, 4, 0, Math.PI*2); ctx.fill();
             }
             else if (type === 'robot') {
-                // جسم الروبوت (مربع)
-                ctx.fillStyle = '#3b82f6'; // أزرق
-                ctx.fillRect(-size, -size*2, size*2, size*2);
+                // جسم
+                ctx.fillStyle = '#3b82f6'; ctx.fillRect(-size*0.8, -size*1.8, size*1.6, size*1.8);
                 // رأس
-                ctx.fillStyle = '#1d4ed8';
-                ctx.fillRect(-size*0.6, -size*2.8, size*1.2, size*0.8);
+                ctx.fillStyle = '#1d4ed8'; ctx.fillRect(-size*0.6, -size*2.5, size*1.2, size*0.8);
                 // عيون
-                ctx.fillStyle = '#ef4444'; // أحمر
-                ctx.beginPath(); ctx.arc(-15, -size*2.4, 5, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(15, -size*2.4, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ef4444'; 
+                ctx.beginPath(); ctx.arc(-12, -size*2.1, 4, 0, Math.PI*2); ctx.arc(12, -size*2.1, 4, 0, Math.PI*2); ctx.fill();
+                // هوائي
+                ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -size*2.5); ctx.lineTo(0, -size*3); ctx.stroke();
             }
 
             ctx.restore();
@@ -372,10 +383,12 @@
             playBtn.textContent = "جاري التشغيل...";
 
             for (let i = 0; i < scenes.length; i++) {
-                if (!isPlaying) break; // إيقاف
+                if (!isPlaying) break; 
                 currentSceneIndex = i;
+                transitionAlpha = 0; // إعادة تعيين التلاشي
                 renderTimeline();
                 drawScene(scenes[i]);
+                
                 // الانتظار حسب مدة المشهد
                 await new Promise(resolve => setTimeout(resolve, scenes[i].duration * 1000));
             }
