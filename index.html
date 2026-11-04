@@ -4,21 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video Studio Pro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ================= CSS (المرحلة 1: التصميم) ================= */
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #151b2b;
+            --border-color: #2a3449;
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --gold: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+
+        body {
+            display: flex;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%);
+        }
+
+        /* الشريط الجانبي */
+        .sidebar {
+            width: 260px;
+            background: rgba(21, 27, 43, 0.8);
+            border-left: 1px solid var(--border-color);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; margin-bottom: 3rem; color: var(--primary); font-weight: 800; }
+        
+        .sidebar nav a {
+            display: block; color: var(--text-muted); text-decoration: none;
+            padding: 12px 15px; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; font-weight: 600;
+        }
+
+        .sidebar nav a:hover, .sidebar nav a.active { background: rgba(139, 92, 246, 0.15); color: var(--text-main); }
+
+        .user-profile { margin-top: auto; display: flex; align-items: center; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .avatar { width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+
+        /* المحتوى الرئيسي */
+        .main-content { margin-right: 260px; flex: 1; padding: 3rem; }
+
+        header { margin-bottom: 2rem; }
+        header h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+        header p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* مساحة العمل */
+        .workspace { display: grid; grid-template-columns: 1fr 1.2fr; gap: 2rem; }
+
+        .panel {
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .panel h3 { margin-bottom: 1rem; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .step-num { background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+
+        textarea {
+            width: 100%; height: 200px; background: #0b0f19;
+            border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 1rem; color: var(--text-main); font-size: 1rem; resize: none; outline: none; transition: 0.3s; line-height: 1.6;
+        }
+        textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+
+        .primary-btn {
+            width: 100%; padding: 1rem; background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 1rem; transition: 0.3s; display: flex; justify-content: center; gap: 10px;
+        }
+        .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3); }
+
+        /* المعاينة */
+        .canvas-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--border-color); position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        .controls { display: flex; gap: 1rem; }
+        .controls button { flex: 1; padding: 12px; background: #1e2638; border: 1px solid var(--border-color); color: white; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .controls button:hover:not(:disabled) { background: #2a3449; }
+        .controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* لوحة المشاهد (Storyboard) */
+        .storyboard { margin-top: 2rem; grid-column: 1 / -1; }
+        .scenes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .scene-card { background: #0b0f19; border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; cursor: pointer; transition: 0.3s; }
+        .scene-card:hover, .scene-card.active { border-color: var(--primary); background: rgba(139, 92, 246, 0.1); }
+        .scene-card h4 { font-size: 0.9rem; margin-bottom: 5px; color: var(--gold); }
+        .scene-card p { font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+        @media (max-width: 1000px) {
+            .workspace { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .main-content { margin-right: 0; padding: 1.5rem; }
+        }
+    </style>
 </head>
 <body>
 
     <!-- الشريط الجانبي -->
     <aside class="sidebar">
-        <div class="logo">
-            <span class="icon">🎬</span>
-            <h2>AI Studio</h2>
-        </div>
+        <div class="logo"><span>🎬</span> AI Studio Pro</div>
         <nav>
-            <a href="#" class="active">لوحة التحكم</a>
+            <a href="#" class="active">استوديو الفيديو</a>
             <a href="#">المشاريع</a>
             <a href="#">القوالب</a>
             <a href="#">الإعدادات</a>
@@ -33,31 +130,180 @@
     <main class="main-content">
         <header>
             <h1>استوديو الفيديو بالذكاء الاصطناعي</h1>
-            <p>حوّل أفكارك إلى فيديوهات احترافية في ثوانٍ.</p>
+            <p>حوّل أفكارك إلى سيناريوهات ومشاهد احترافية.</p>
         </header>
 
         <div class="workspace">
             <!-- قسم إدخال القصة -->
             <section class="panel input-panel">
-                <h3>1. اكتب القصة أو السيناريو</h3>
-                <textarea id="storyInput" placeholder="مثال: في مدينة مستقبلية، يطير روبوت صغير فوق المباني..."></textarea>
+                <h3><span class="step-num">1</span> اكتب القصة</h3>
+                <textarea id="storyInput" placeholder="مثال: في غابة سحرية، يستيقظ أسد صغير مع شروق الشمس. يلتقي بأرنب يبحث عن طريق العودة إلى منزله. يقرران عبور النهر بمساعدة فيل طيب."></textarea>
                 <button id="generateBtn" class="primary-btn">توليد المشاهد ✨</button>
             </section>
 
             <!-- قسم معاينة الفيديو -->
             <section class="panel preview-panel">
-                <h3>2. معاينة الفيديو</h3>
+                <h3><span class="step-num">2</span> معاينة المشهد</h3>
                 <div class="canvas-container">
-                    <canvas id="videoCanvas" width="1280" height="720"></canvas>
+                    <canvas id="videoCanvas" width="960" height="540"></canvas>
                 </div>
                 <div class="controls">
-                    <button id="playBtn">▶ تشغيل</button>
-                    <button id="exportBtn" disabled>⬇ تصدير</button>
+                    <button id="playBtn" disabled>▶ تشغيل</button>
+                    <button id="exportBtn" disabled>⬇ تصدير الفيديو</button>
                 </div>
+            </section>
+
+            <!-- لوحة المشاهد -->
+            <section class="panel storyboard">
+                <h3><span class="step-num">3</span> لوحة المشاهد (Storyboard)</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">اكتب قصة واضغط على "توليد المشاهد" لتظهر هنا.</p>
+                <div class="scenes-grid" id="scenesContainer"></div>
             </section>
         </div>
     </main>
 
-    <script src="app.js"></script>
+    <!-- ================= JavaScript (المرحلة 2: محرك القصة) ================= -->
+    <script>
+        const canvas = document.getElementById('videoCanvas');
+        const ctx = canvas.getContext('2d');
+        const storyInput = document.getElementById('storyInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const scenesContainer = document.getElementById('scenesContainer');
+        const playBtn = document.getElementById('playBtn');
+        const exportBtn = document.getElementById('exportBtn');
+
+        let scenes = [];
+        let currentSceneIndex = 0;
+
+        // دالة تقسيم القصة إلى مشاهد
+        function generateScenes() {
+            const text = storyInput.value.trim();
+            if (!text) {
+                alert("المرجو كتابة قصة أولاً!");
+                return;
+            }
+
+            // تقسيم النص بناءً على النقطة أو علامة الاستفهام
+            const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.length > 3);
+            
+            scenes = sentences.map((sentence, index) => {
+                return {
+                    id: index + 1,
+                    text: sentence,
+                    // هنا نضيف كلمات مفتاحية مستقبلاً لتحليل الشخصيات والمكان
+                    theme: getTheme(sentence) 
+                };
+            });
+
+            renderScenes();
+            if (scenes.length > 0) {
+                currentSceneIndex = 0;
+                drawScene(scenes[0]);
+                playBtn.disabled = false;
+                exportBtn.disabled = false;
+            }
+        }
+
+        // دالة بسيطة لتحليل النص ومعرفة الخلفية (Theme)
+        function getTheme(text) {
+            text = text.toLowerCase();
+            if (text.includes('غابة') || text.includes('شجر')) return 'forest';
+            if (text.includes('بحر') || text.includes('ماء') || text.includes('نهر')) return 'water';
+            if (text.includes('ليل') || text.includes('نجوم')) return 'night';
+            if (text.includes('صحراء') || text.includes('رمل')) return 'desert';
+            return 'default';
+        }
+
+        // عرض المشاهد في الواجهة
+        function renderScenes() {
+            scenesContainer.innerHTML = '';
+            scenes.forEach((scene, index) => {
+                const card = document.createElement('div');
+                card.className = `scene-card ${index === currentSceneIndex ? 'active' : ''}`;
+                card.innerHTML = `
+                    <h4>المشهد ${scene.id}</h4>
+                    <p>${scene.text}</p>
+                `;
+                card.onclick = () => {
+                    currentSceneIndex = index;
+                    renderScenes(); // لتحديث الكلاس active
+                    drawScene(scene);
+                };
+                scenesContainer.appendChild(card);
+            });
+        }
+
+        // رسم المشهد على الـ Canvas (محاكاة بسيطة)
+        function drawScene(scene) {
+            // مسح الشاشة
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // تحديد الألوان بناءً على الثيم
+            let skyColor = '#1e1b4b'; // default
+            let groundColor = '#374151';
+
+            if (scene.theme === 'forest') { skyColor = '#064e3b'; groundColor = '#065f46'; }
+            if (scene.theme === 'water') { skyColor = '#0c4a6e'; groundColor = '#0369a1'; }
+            if (scene.theme === 'night') { skyColor = '#1e1b4b'; groundColor = '#111827'; }
+            if (scene.theme === 'desert') { skyColor = '#7c2d12'; groundColor = '#9a3412'; }
+
+            // رسم السماء
+            ctx.fillStyle = skyColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.7);
+
+            // رسم الأرض
+            ctx.fillStyle = groundColor;
+            ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+
+            // رسم الشمس أو القمر
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.8, canvas.height * 0.2, 50, 0, Math.PI * 2);
+            ctx.fillStyle = scene.theme === 'night' ? '#e2e8f0' : '#fbbf24';
+            ctx.fill();
+
+            // كتابة النص على الفيديو
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Cairo';
+            ctx.textAlign = 'center';
+            ctx.fillText(`مشهد ${scene.id}`, canvas.width / 2, canvas.height - 80);
+            
+            // إضافة ظل للنص
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 10;
+            ctx.fillText(scene.text, canvas.width / 2, canvas.height - 40);
+            ctx.shadowBlur = 0; // إعادة تعيين الظل
+        }
+
+        // ربط الأزرار
+        generateBtn.addEventListener('click', generateScenes);
+
+        playBtn.addEventListener('click', () => {
+            if (scenes.length === 0) return;
+            let i = 0;
+            playBtn.disabled = true;
+            playBtn.textContent = "جاري التشغيل...";
+            
+            const interval = setInterval(() => {
+                currentSceneIndex = i;
+                renderScenes();
+                drawScene(scenes[i]);
+                i++;
+                if (i >= scenes.length) {
+                    clearInterval(interval);
+                    playBtn.disabled = false;
+                    playBtn.textContent = "▶ تشغيل";
+                }
+            }, 2000); // 2 ثانية لكل مشهد
+        });
+
+        // رسم واجهة فارغة في البداية
+        ctx.fillStyle = '#0b0f19';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#475569';
+        ctx.font = '24px Cairo';
+        ctx.textAlign = 'center';
+        ctx.fillText("بانتظار القصة...", canvas.width / 2, canvas.height / 2);
+    </script>
 </body>
 </html>
